@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EasyGames.Web.Areas.Owner.Controllers
 {
-    // Area: /Owner/ShopStocks
     [Area("Owner")]
     public class ShopStocksController : Controller
     {
@@ -21,37 +20,41 @@ namespace EasyGames.Web.Areas.Owner.Controllers
             _inventory = inventory;
         }
 
-        
+        // Supports:
+        //  /Owner/ShopStocks          -> loads first shop
+        //  /Owner/ShopStocks?shopId=1 -> uses query
+        //  /Owner/ShopStocks/1        -> uses route id
         [HttpGet]
         public async Task<IActionResult> Index(int? shopId, int? id)
         {
-            // pick id from ?shopId= or /{id}; else fall back to first seeded shop
             var effectiveId = shopId ?? id;
             if (effectiveId == null || effectiveId.Value <= 0)
             {
                 var firstId = await _db.Shops
                     .OrderBy(s => s.Id)
                     .Select(s => s.Id)
-                    .FirstOrDefaultAsync(); // returns 0 if none
+                    .FirstOrDefaultAsync();
 
-                if (firstId == 0)
-                    return NotFound("No shops available. Seed is missing.");
-
+                if (firstId == 0) return NotFound("No shops available (seed missing).");
                 effectiveId = firstId;
             }
 
-            // load shop
             var shop = await _db.Shops.AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == effectiveId.Value);
-            if (shop == null)
-                return NotFound($"Shop {effectiveId} not found.");
+            if (shop == null) return NotFound($"Shop {effectiveId} not found.");
 
-            // Build a simple label (we avoid assuming Shop has Name)
-            var shopLabel = shop.GetType().GetProperty("ShopCode")?.GetValue(shop)?.ToString()
-                            ?? $"Shop #{effectiveId.Value}";
+            // Build a simple, strongly-typed label (no reflection)
+            string shopLabel =
+                !string.IsNullOrWhiteSpace(shop.ShopCode)
+                    ? shop.ShopCode
+                    : $"{(shop.City ?? "").Trim()}, {(shop.Country ?? "").Trim()}".Trim(' ', ',');
 
-            // load stock rows (fallback product label -> "PID <id>")
+            if (string.IsNullOrWhiteSpace(shopLabel))
+                shopLabel = $"Shop #{effectiveId.Value}";
+
+            // Strongly-typed rows (no dynamic)
             var rows = await _db.ShopStocks
+                .AsNoTracking()
                 .Where(x => x.ShopId == effectiveId.Value)
                 .OrderBy(x => x.ProductId)
                 .Select(x => new ShopStockRowVM
@@ -74,25 +77,20 @@ namespace EasyGames.Web.Areas.Owner.Controllers
             return View(vm);
         }
 
-        // POST: /Owner/ShopStocks/Inc
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Inc(int shopId, int productId)
         {
-            // simple +1 (service handles create-or-increment internally if you wrote it that way)
             await _inventory.IncreaseAsync(shopId, productId, 1);
             TempData["msg"] = "Increased by 1.";
             return RedirectToAction(nameof(Index), new { shopId });
         }
 
-        // POST: /Owner/ShopStocks/Dec
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Dec(int shopId, int productId)
         {
             try
             {
-                await _inventory.DecreaseAsync(shopId, productId, 1); // service enforces no negatives
+                await _inventory.DecreaseAsync(shopId, productId, 1);
                 TempData["msg"] = "Decreased by 1.";
             }
             catch (System.Exception ex)
@@ -102,7 +100,7 @@ namespace EasyGames.Web.Areas.Owner.Controllers
             return RedirectToAction(nameof(Index), new { shopId });
         }
 
-        // Optional quick diagnostic: /Owner/ShopStocks/Ping?shopId=1
+        // Diagnostic (optional): /Owner/ShopStocks/Ping?shopId=1
         [HttpGet]
         public IActionResult Ping(int shopId) => Content($"OK ShopStocks (shopId={shopId})");
     }
