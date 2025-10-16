@@ -1,19 +1,28 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using EasyGames.Web.ViewModels;
+using EasyGames.Web.Data;
+using EasyGames.Web.Services;
 
 namespace EasyGames.Web.Areas.Shop.Controllers
 {
-    // Area route: /Shop/Pos
     [Area("Shop")]
     public class PosController : Controller
     {
-        // We store the POS cart in Session as JSON.
         private const string SessionKey = "pos_cart_v1";
+        private readonly AppDbContext _db;
+        private readonly IInventoryService _inventory;
 
-        // GET: /Shop/Pos
+        // We inject Db + Inventory so we can decrease stock on Pay
+        public PosController(AppDbContext db, IInventoryService inventory)
+        {
+            _db = db;
+            _inventory = inventory;
+        }
+
         [HttpGet]
         public IActionResult Index()
         {
@@ -25,9 +34,6 @@ namespace EasyGames.Web.Areas.Shop.Controllers
             return View(vm);
         }
 
-        // POST: /Shop/Pos/AddLine
-        // For now we accept free-form product info (student-level).
-        // Later (Step 4) we can hook to real Products/Inventory.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult AddLine(int productId, string productName, decimal price, int qty)
@@ -48,25 +54,22 @@ namespace EasyGames.Web.Areas.Shop.Controllers
             }
             else
             {
-                line.Quantity += qty; // simple add
+                line.Quantity += qty;
             }
 
             SaveLines(lines);
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: /Shop/Pos/RemoveLine
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult RemoveLine(int productId)
         {
-            var lines = LoadLines();
-            lines = lines.Where(x => x.ProductId != productId).ToList();
+            var lines = LoadLines().Where(x => x.ProductId != productId).ToList();
             SaveLines(lines);
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: /Shop/Pos/Clear
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Clear()
@@ -75,19 +78,46 @@ namespace EasyGames.Web.Areas.Shop.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: /Shop/Pos/Pay
-        // SAFE STUB: This just clears the cart and shows a success message.
-        // Step 4 will call InventoryService to decrease stock (never negative).
+        // NOW does real stock decrease (never negative – service enforces)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Pay()
+        public async Task<IActionResult> Pay()
         {
-            SaveLines(new List<PosLineVM>());
-            TempData["msg"] = "Payment complete (stub). We will update stock in Step 4.";
+            var lines = LoadLines();
+            if (lines.Count == 0)
+            {
+                TempData["msg"] = "No items to pay.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var shop = _db.Shops.FirstOrDefault();
+            if (shop == null)
+            {
+                TempData["msg"] = "Shop not found (seed missing).";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                // Decrease each product stock
+                foreach (var ln in lines)
+                {
+                    // InventoryService from Akshata handles 'no negatives'
+                    await _inventory.DecreaseAsync(shop.Id, ln.ProductId, ln.Quantity);
+                }
+
+                SaveLines(new List<PosLineVM>());
+                TempData["msg"] = "Payment complete. Stock updated.";
+            }
+            catch (System.Exception ex)
+            {
+                TempData["msg"] = "Payment failed: " + ex.Message;
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
-        // ===== Session helpers =====
+        //  Session helpers 
         private List<PosLineVM> LoadLines()
         {
             var str = HttpContext.Session.GetString(SessionKey);

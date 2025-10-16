@@ -14,7 +14,7 @@ builder.Services.AddHttpContextAccessor();
 
 // 2) InMemory provider so everyone can run without SQL now
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseInMemoryDatabase("EasyGamesDb")); // <— this was missing
+    options.UseInMemoryDatabase("EasyGamesDb")); 
 
 // 3) App services 
 builder.Services.AddScoped<IInventoryService, InventoryService>();
