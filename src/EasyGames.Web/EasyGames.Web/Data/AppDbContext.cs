@@ -14,6 +14,8 @@ namespace EasyGames.Web.Data
         public DbSet<Shop> Shops => Set<Shop>();
         public DbSet<ShopStock> ShopStocks => Set<ShopStock>();
         public DbSet<AppUser> Users { get; set; } = null!;
+        public DbSet<Product> Products => Set<Product>();
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -26,6 +28,11 @@ namespace EasyGames.Web.Data
                 .WithOne(ss => ss.Shop!)
                 .HasForeignKey(ss => ss.ShopId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.Sku)
+                .IsUnique();
+
 
             modelBuilder.Entity<AppUser>()
                 .HasIndex(u => u.Email)

@@ -35,12 +35,24 @@ namespace EasyGames.Web.Data
                 );
                 db.SaveChanges();
             }
+            if (!db.Products.Any())
+            {
+                db.Products.AddRange(
+                    new Product { Id = 1, Sku = "EG-001", Name = "Keyboard", Price = 59.99m, IsActive = true },
+                    new Product { Id = 2, Sku = "EG-002", Name = "Pro Headset", Price = 89.50m, IsActive = true },
+                    new Product { Id = 3, Sku = "EG-003", Name = "Retro Stick", Price = 24.00m, IsActive = true }
+                );
+                db.SaveChanges();
+
+            }
 
 
 
 
-            // We'll reference simple fake product IDs for now (1001..1003).
-            var stocks = new[]
+
+
+                // We'll reference simple fake product IDs for now (1001..1003).
+                var stocks = new[]
             {
                 new ShopStock { Id = 1, ShopId = 1, ProductId = 1001, Quantity = 15, ReorderLevel = 5 },
                 new ShopStock { Id = 2, ShopId = 1, ProductId = 1002, Quantity = 8,  ReorderLevel = 4 },
