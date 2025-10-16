@@ -5,90 +5,18 @@
 
 @section Head {
     <style>
-        :root {
-            --eg-bg: #0b0f19;
-            --eg-surface: #0f172a;
-            --eg-surface-2: #0b1222;
-            --eg-gold: #d4af37;
-            --eg-gold-2: #f1c40f;
-            --eg-text: #cbd5e1;
-            --eg-border: #1e293b;
-            --eg-shadow: 0 6px 24px rgba(0,0,0,.35);
-        }
-
-        body {
-            background: var(--eg-bg);
-            color: var(--eg-text);
-        }
-
-        .eg-container {
-            max-width: 800px;
-            margin: 24px auto;
-            padding: 0 12px;
-        }
-
-        .eg-card {
-            background: var(--eg-surface);
-            border-radius: 14px;
-            padding: 18px;
-            box-shadow: var(--eg-shadow);
-        }
-
-        .eg-h1 {
-            color: var(--eg-gold);
-            margin: 0 0 10px;
-            font-weight: 700;
-        }
-
-        .eg-btn {
-            background: var(--eg-gold);
-            color: #111;
-            border: none;
-            border-radius: 10px;
-            padding: 8px 14px;
-            font-weight: 600;
-        }
-
-            .eg-btn:hover {
-                background: var(--eg-gold-2);
-            }
-
-        .eg-input {
-            background: var(--eg-surface-2);
-            color: #e5e7eb;
-            border: 1px solid #1f2a44;
-            border-radius: 10px;
-            padding: 8px 10px;
-            height: 40px;
-            width: 100%;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
-
-        .full {
-            grid-column: 1/-1;
-        }
-
-        label {
-            margin-bottom: 6px;
-            display: block;
-        }
-
-        .val {
-            color: #fca5a5;
-            font-size: .9rem;
-            margin-top: 4px;
-        }
-
-        @@media (max-width:640px) {
-            .form-grid {
-                display: block;
-            }
-        }
+        :root{--eg-bg:#0b0f19;--eg-surface:#0f172a;--eg-surface-2:#0b1222;--eg-gold:#d4af37;--eg-gold-2:#f1c40f;--eg-text:#cbd5e1;--eg-border:#1e293b;--eg-shadow:0 6px 24px rgba(0,0,0,.35);}
+        body{background:var(--eg-bg);color:var(--eg-text);}
+        .eg-container{max-width:800px;margin:24px auto;padding:0 12px;}
+        .eg-card{background:var(--eg-surface);border-radius:14px;padding:18px;box-shadow:var(--eg-shadow);}
+        .eg-h1{color:var(--eg-gold);margin:0 0 10px;font-weight:700;}
+        .eg-btn{background:var(--eg-gold);color:#111;border:none;border-radius:10px;padding:8px 14px;font-weight:600;}
+        .eg-btn:hover{background:var(--eg-gold-2);}
+        .eg-input{background:var(--eg-surface-2);color:#e5e7eb;border:1px solid #1f2a44;border-radius:10px;padding:8px 10px;height:40px;width:100%;}
+        .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+        .full{grid-column:1/-1;}
+        label{margin-bottom:6px;display:block;}
+        @@media (max-width:640px){ .form-grid{display:block;} }
     </style>
 }
 
@@ -101,26 +29,23 @@
 
             <div class="form-grid">
                 <div class="full">
-                    <label asp-for="FullName"></label>
-                    <input class="eg-input" asp-for="FullName" />
-                    <span class="val" asp-validation-for="FullName"></span>
+                    <label for="FullName">Full Name</label>
+                    <input class="eg-input" id="FullName" name="FullName" />
                 </div>
 
                 <div class="full">
-                    <label asp-for="Email"></label>
-                    <input class="eg-input" asp-for="Email" />
-                    <span class="val" asp-validation-for="Email"></span>
+                    <label for="Email">Email</label>
+                    <input class="eg-input" id="Email" name="Email" type="email" />
                 </div>
 
                 <div>
-                    <label asp-for="Role"></label>
-                    <input class="eg-input" asp-for="Role" />
-                    <span class="val" asp-validation-for="Role"></span>
+                    <label for="Role">Role</label>
+                    <input class="eg-input" id="Role" name="Role" value="Staff" />
                 </div>
 
-                <div>
-                    <label>Active</label>
-                    <input type="checkbox" asp-for="IsActive" />
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <input id="IsActive" name="IsActive" type="checkbox" checked />
+                    <label for="IsActive" style="margin:0;">Active</label>
                 </div>
             </div>
 
@@ -131,9 +56,5 @@
         </form>
     </div>
 </div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
 
 

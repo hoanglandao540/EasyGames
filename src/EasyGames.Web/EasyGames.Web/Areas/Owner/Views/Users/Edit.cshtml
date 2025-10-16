@@ -1,4 +1,4 @@
-﻿v@model EasyGames.Web.ViewModels.UserVM
+﻿@model EasyGames.Web.ViewModels.UserVM
 @{
     ViewData["Title"] = "Edit User";
 }
@@ -77,12 +77,6 @@
             display: block;
         }
 
-        .val {
-            color: #fca5a5;
-            font-size: .9rem;
-            margin-top: 4px;
-        }
-
         @@media (max-width:640px) {
             .form-grid {
                 display: block;
@@ -96,30 +90,27 @@
     <div class="eg-card">
         <form asp-area="Owner" asp-controller="Users" asp-action="Edit" method="post" novalidate>
             @Html.AntiForgeryToken()
-            <input type="hidden" asp-for="Id" />
+            <input type="hidden" id="Id" name="Id" value="@Model.Id" />
 
             <div class="form-grid">
                 <div class="full">
-                    <label asp-for="FullName"></label>
-                    <input class="eg-input" asp-for="FullName" />
-                    <span class="val" asp-validation-for="FullName"></span>
+                    <label for="FullName">Full Name</label>
+                    <input class="eg-input" id="FullName" name="FullName" value="@Model.FullName" />
                 </div>
 
                 <div class="full">
-                    <label asp-for="Email"></label>
-                    <input class="eg-input" asp-for="Email" />
-                    <span class="val" asp-validation-for="Email"></span>
+                    <label for="Email">Email</label>
+                    <input class="eg-input" id="Email" name="Email" type="email" value="@Model.Email" />
                 </div>
 
                 <div>
-                    <label asp-for="Role"></label>
-                    <input class="eg-input" asp-for="Role" />
-                    <span class="val" asp-validation-for="Role"></span>
+                    <label for="Role">Role</label>
+                    <input class="eg-input" id="Role" name="Role" value="@Model.Role" />
                 </div>
 
-                <div>
-                    <label>Active</label>
-                    <input type="checkbox" asp-for="IsActive" />
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <input id="IsActive" name="IsActive" type="checkbox" @(Model.IsActive ? "checked" : "") />
+                    <label for="IsActive" style="margin:0;">Active</label>
                 </div>
             </div>
 
@@ -130,9 +121,5 @@
         </form>
     </div>
 </div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
 
 

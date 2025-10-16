@@ -13,30 +13,18 @@ namespace EasyGames.Web.Areas.Owner.Controllers
     public class ShopsController : Controller
     {
         private readonly AppDbContext _db;
-
-        public ShopsController(AppDbContext db)
-        {
-            _db = db;
-        }
+        public ShopsController(AppDbContext db) { _db = db; }
 
         // GET: /Owner/Shops
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            // Pull minimal shop fields (no assumption of a 'Name' property on the entity)
+            
             var shops = await _db.Shops
                 .AsNoTracking()
-                .Select(s => new
-                {
-                    s.Id,
-                    s.ShopCode,
-                    s.City,
-                    s.Country,
-                    s.Phone
-                })
+                .Select(s => new { s.Id, s.ShopCode, s.City, s.Country, s.Phone })
                 .ToListAsync();
 
-            // Aggregate stock per shop (no reliance on a 'Stocks' navigation)
             var stockAgg = await _db.ShopStocks
                 .AsNoTracking()
                 .GroupBy(ss => ss.ShopId)
@@ -49,15 +37,10 @@ namespace EasyGames.Web.Areas.Owner.Controllers
                 })
                 .ToListAsync();
 
-            // Build VMs safely
             var vms = shops
                 .Select(s =>
                 {
                     var agg = stockAgg.FirstOrDefault(a => a.ShopId == s.Id);
-                    var totalSkus = agg?.TotalSkus ?? 0;
-                    var totalQty = agg?.TotalQty ?? 0;
-                    var lowSkus = agg?.LowStockSkus ?? 0;
-
                     var friendlyName = !string.IsNullOrWhiteSpace(s.ShopCode)
                         ? s.ShopCode
                         : $"{(s.City ?? "").Trim()}, {(s.Country ?? "").Trim()}".Trim(' ', ',');
@@ -70,12 +53,12 @@ namespace EasyGames.Web.Areas.Owner.Controllers
                         City = s.City,
                         Country = s.Country,
                         Phone = s.Phone,
-                        TotalSkus = totalSkus,
-                        TotalQty = totalQty,
-                        LowStockSkus = lowSkus
+                        TotalSkus = agg?.TotalSkus ?? 0,
+                        TotalQty = agg?.TotalQty ?? 0,
+                        LowStockSkus = agg?.LowStockSkus ?? 0
                     };
                 })
-                .OrderBy(vm => vm.Id)
+                .OrderBy(x => x.Id)
                 .ToList();
 
             return View(vms);
@@ -83,23 +66,16 @@ namespace EasyGames.Web.Areas.Owner.Controllers
 
         // GET: /Owner/Shops/Create
         [HttpGet]
-        public IActionResult Create()
-        {
-            return View(new ShopCreateVM());
-        }
+        public IActionResult Create() => View(new ShopCreateVM());
 
         // POST: /Owner/Shops/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ShopCreateVM vm)
         {
-            if (!ModelState.IsValid)
-                return View(vm);
+            if (!ModelState.IsValid) return View(vm);
 
-            // Map VM -> entity 
             var shopEntity = new ShopEntity
             {
-                // Id is DB-generated (InMemory), do not set it
                 ShopCode = vm.ShopCode,
                 City = vm.City,
                 Country = vm.Country,
@@ -114,5 +90,6 @@ namespace EasyGames.Web.Areas.Owner.Controllers
         }
     }
 }
+
 
 
