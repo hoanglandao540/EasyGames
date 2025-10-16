@@ -1,0 +1,140 @@
+﻿@model EasyGames.Web.ViewModels.ShopCreateVM
+@{
+    ViewData["Title"] = "Create Shop";
+}
+
+@section Head {
+    <style>
+        :root {
+            --eg-bg: #0b0f19;
+            --eg-surface: #0f172a;
+            --eg-surface-2: #0b1222;
+            --eg-gold: #d4af37;
+            --eg-gold-2: #f1c40f;
+            --eg-text: #cbd5e1;
+            --eg-border: #1e293b;
+            --eg-shadow: 0 6px 24px rgba(0,0,0,.35);
+        }
+
+        body {
+            background: var(--eg-bg);
+            color: var(--eg-text);
+        }
+
+        .eg-container {
+            max-width: 900px;
+            margin: 24px auto;
+            padding: 0 12px;
+        }
+
+        .eg-card {
+            background: var(--eg-surface);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: var(--eg-shadow);
+        }
+
+        .eg-h1 {
+            color: var(--eg-gold);
+            margin: 0 0 10px;
+            font-weight: 700;
+        }
+
+        .eg-btn {
+            background: var(--eg-gold);
+            color: #111;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-weight: 600;
+        }
+
+            .eg-btn:hover {
+                background: var(--eg-gold-2);
+            }
+
+        .eg-input {
+            background: var(--eg-surface-2);
+            color: #e5e7eb;
+            border: 1px solid #1f2a44;
+            border-radius: 10px;
+            padding: 8px 10px;
+            height: 40px;
+            width: 100%;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+            .form-grid .full {
+                grid-column: 1 / -1;
+            }
+
+        label {
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .val {
+            color: #fca5a5;
+            font-size: .9rem;
+            margin-top: 4px;
+        }
+
+        @@media (max-width:640px) {
+            .form-grid {
+                display: block;
+            }
+        }
+    </style>
+}
+
+<div class="eg-container">
+    <h2 class="eg-h1">Create Shop</h2>
+
+    <div class="eg-card">
+        <form asp-area="Owner" asp-controller="Shops" asp-action="Create" method="post" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div class="form-grid">
+                <div class="full">
+                    <label asp-for="ShopCode"></label>
+                    <input class="eg-input" asp-for="ShopCode" />
+                    <span class="val" asp-validation-for="ShopCode"></span>
+                </div>
+
+                <div>
+                    <label asp-for="City"></label>
+                    <input class="eg-input" asp-for="City" />
+                    <span class="val" asp-validation-for="City"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Country"></label>
+                    <input class="eg-input" asp-for="Country" />
+                    <span class="val" asp-validation-for="Country"></span>
+                </div>
+
+                <div class="full">
+                    <label asp-for="Phone"></label>
+                    <input class="eg-input" asp-for="Phone" />
+                    <span class="val" asp-validation-for="Phone"></span>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:14px;">
+                <a class="eg-btn" asp-area="Owner" asp-controller="Shops" asp-action="Index">Cancel</a>
+                <button type="submit" class="eg-btn">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
+
