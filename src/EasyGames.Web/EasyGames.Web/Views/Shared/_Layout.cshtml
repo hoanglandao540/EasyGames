@@ -1,55 +1,143 @@
-﻿<!DOCTYPE html>
+﻿@* 
+  Why this look? Dark, cinematic surfaces with gold accents feel premium.
+  I’m overriding Bootstrap gently using CSS variables so it stays maintainable.
+*@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - EasyGames.Web</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/EasyGames.Web.styles.css" asp-append-version="true" />
+    <title>@ViewData["Title"] - EasyGames</title>
+
+    <!-- Bootstrap CDN (keeps student setup simple) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Posh theme: tiny, readable overrides -->
+    <style>
+        :root{
+            /* page background */
+            --eg-bg: #0b0f19;      
+            
+            /* cards/navbar base */
+            --eg-surface: #0f172a;  
+            
+            /* subtle gradient partner */
+            --eg-surface-2:#0b1220; 
+            
+            /* main text on dark */
+            --eg-text: #e5e7eb;     
+            
+            /* secondary text */
+            --eg-muted:#94a3b8;   
+            
+            /* primary accent (gold) */
+            --eg-gold:#d4af37;    
+            
+            /* brighter gold for hovers */
+            --eg-gold-2:#f1c40f;       
+            --eg-ring: rgba(212,175,55,.35);
+            --eg-border: rgba(212,175,55,.18);
+        }
+        html, body { background: var(--eg-bg); color: var(--eg-text); }
+        a, .nav-link { color: var(--eg-text); }
+        a:hover, .nav-link:hover { color: var(--eg-gold-2); }
+
+        /* Navbar: elegant gradient with a slim gold underline */
+        .eg-navbar {
+            background: linear-gradient(180deg, var(--eg-surface-2), var(--eg-surface));
+            border-bottom: 1px solid var(--eg-border);
+        }
+        .navbar-brand {
+            font-weight: 800; letter-spacing: .6px; color: var(--eg-gold) !important;
+        }
+        .nav-link {
+            font-weight: 600; opacity: .92; position: relative; padding-bottom: .6rem;
+        }
+        .nav-link::after{
+            content:""; position:absolute; left:.5rem; right:.5rem; bottom:.35rem;
+            height:2px; background: transparent; transition: all .2s ease;
+        }
+        .nav-link:hover::after{ background: var(--eg-gold-2); }
+
+        /* Buttons (optional, used by pages later) */
+        .btn-eg {
+            background: var(--eg-gold); color: #111; border: none; font-weight:700;
+            box-shadow: 0 6px 18px -6px var(--eg-ring);
+        }
+        .btn-eg:hover{ background: var(--eg-gold-2); color:#111; }
+
+        /* Cards + containers feel premium */
+        .eg-container { max-width: 1120px; }
+        .card {
+            background: linear-gradient(180deg, var(--eg-surface), var(--eg-surface-2));
+            border: 1px solid var(--eg-border); border-radius: 16px;
+            box-shadow: 0 10px 28px -14px rgba(0,0,0,.6);
+        }
+        .card-title { color: var(--eg-gold); }
+
+        /* Footer: slim and understated */
+        .eg-footer {
+            background: linear-gradient(180deg, var(--eg-surface), var(--eg-bg));
+            border-top: 1px solid var(--eg-border);
+            color: var(--eg-muted);
+        }
+    </style>
+
+    <link rel="stylesheet" href="~/css/site.css" />
+    @RenderSection("Head", required: false)
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">EasyGames.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+<body class="d-flex flex-column min-vh-100">
+    <header class="eg-navbar shadow-sm">
+        <nav class="navbar navbar-expand-lg">
+            <div class="container eg-container">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    EasyGames
+                </a>
+
+                <button class="navbar-toggler btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav flex-row ms-3">
-                        <li class="nav-item me-3"><a class="nav-link" asp-area="Owner" asp-controller="Products" asp-action="Index">Owner ▸ Products</a></li>
-                        <li class="nav-item me-3"><a class="nav-link" asp-area="Storefront" asp-controller="Catalog" asp-action="Index">Storefront ▸ Catalog</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-area="Shop" asp-controller="Pos" asp-action="Index">Shop ▸ POS</a></li>
-                    </ul>
 
+                <div id="mainNav" class="collapse navbar-collapse">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <!-- Owner (Fabiha + Akshata) -->
+                        <li class="nav-item"><a class="nav-link" asp-area="Owner" asp-controller="Products" asp-action="Index">Products</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="Owner" asp-controller="Users" asp-action="Index">Users</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="Owner" asp-controller="Shops" asp-action="Index">Shops</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="Owner" asp-controller="ShopStocks" asp-action="Index">Stock</a></li>
+
+                        <!-- Storefront (Sandesh) -->
+                        <li class="nav-item"><a class="nav-link" asp-area="Storefront" asp-controller="Catalog" asp-action="Index">Catalog</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="Storefront" asp-controller="Cart" asp-action="Index">Cart</a></li>
+
+                        <!-- Shop POS (Hoang) -->
+                        <li class="nav-item"><a class="nav-link" asp-area="Shop" asp-controller="Pos" asp-action="Index">POS</a></li>
+                    </ul>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - EasyGames.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <main class="flex-grow-1 py-4">
+        <div class="container eg-container">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="eg-footer mt-auto py-3">
+        <div class="container eg-container small">
+            <span>© @DateTime.Now.Year EasyGames</span>
+            <span class="ms-2">•</span>
+            <span class="ms-2">Built by Fabiha, Sandesh, Akshata, Hoang</span>
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+
+    <!-- Bootstrap JS bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    @RenderSection("Scripts", required: false)
 </body>
 </html>
+
+
+
