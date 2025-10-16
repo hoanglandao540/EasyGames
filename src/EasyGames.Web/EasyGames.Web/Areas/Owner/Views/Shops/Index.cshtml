@@ -5,73 +5,144 @@
 
 @section Head {
     <style>
-        :root{
+        /* Midnight + Gold — per-page token pack */
+        :root {
             --eg-bg: #0b0f19;
             --eg-surface: #0f172a;
-            --eg-text: #e5e7eb;
-            --eg-muted:#94a3b8;
-            --eg-gold:#d4af37;
-            --eg-border: rgba(212,175,55,.18);
+            --eg-surface-2: #0b1222;
+            --eg-gold: #d4af37;
+            --eg-gold-2: #f1c40f;
+            --eg-text: #cbd5e1;
+            --eg-muted: #94a3b8;
+            --eg-border: #1e293b;
+            --eg-shadow: 0 6px 24px rgba(0,0,0,.35);
         }
-        .eg-card{
-            background: linear-gradient(180deg, var(--eg-surface), #0b1220);
-            border: 1px solid var(--eg-border);
-            border-radius: 16px;
-            padding: 18px;
+
+        body {
+            background: var(--eg-bg);
             color: var(--eg-text);
-            box-shadow: 0 10px 28px -14px rgba(0,0,0,.6);
         }
-        .eg-title{ color: var(--eg-gold); letter-spacing:.4px; }
-        .eg-table th{ color: var(--eg-gold); font-weight:700; border-bottom-color: var(--eg-border) !important; }
-        .eg-table td{ color: var(--eg-text); border-color: #182036 !important; }
-        .btn-eg{ background: var(--eg-gold); color:#111; font-weight:700; border:none; }
-        .btn-eg:hover{ background:#f1c40f; color:#111; }
+
+        .eg-container {
+            max-width: 1100px;
+            margin: 24px auto;
+            padding: 0 12px;
+        }
+
+        .eg-card {
+            background: var(--eg-surface);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: var(--eg-shadow);
+        }
+
+        .eg-h1 {
+            color: var(--eg-gold);
+            margin: 0 0 10px;
+            font-weight: 700;
+        }
+
+        .eg-btn {
+            background: var(--eg-gold);
+            color: #111;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-weight: 600;
+        }
+
+            .eg-btn:hover {
+                background: var(--eg-gold-2);
+            }
+
+        .eg-btn-sm {
+            padding: 6px 10px;
+            border-radius: 8px;
+        }
+
+        .eg-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .eg-table th, .eg-table td {
+                padding: 10px;
+                border-bottom: 1px solid var(--eg-border);
+            }
+
+            .eg-table th {
+                color: var(--eg-gold);
+                font-weight: 600;
+            }
+        /* Toolbar + equal control heights = consistent alignment */
+        .eg-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .eg-toolbar-right {
+            justify-content: flex-end;
+        }
+
+        .eg-btn, .eg-input {
+            height: 40px;
+        }
+
+        @@media (max-width:640px) {
+            .eg-container {
+                padding: 0 8px;
+            }
+        }
     </style>
 }
 
-<div class="eg-card">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="eg-title m-0">Shops</h2>
-        <a class="btn btn-eg" asp-area="Owner" asp-controller="Shops" asp-action="Create">Add Shop</a>
-        @* Create page can come later; button is just a placeholder *@
-    </div>
+<div class="eg-container">
+    <h2 class="eg-h1">Shops</h2>
 
-    <div class="table-responsive">
-        <table class="table table-sm eg-table align-middle">
-            <thead>
-                <tr>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>City</th>
-                    <th>Country</th>
-                    <th>Phone</th>
-                    <th class="text-end">SKUs</th>
-                    <th class="text-end">Total Qty</th>
-                    <th class="text-end">Low Stock</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var s in Model)
-                {
+    <div class="eg-card">
+        <div class="eg-toolbar eg-toolbar-right">
+            <a class="eg-btn eg-btn-sm" asp-area="Owner" asp-controller="Shops" asp-action="Create">Add Shop</a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="eg-table">
+                <thead>
                     <tr>
-                        <td>@s.ShopCode</td>
-                        <td>@s.ShopName</td>
-                        <td>@s.City</td>
-                        <td>@s.Country</td>
-                        <td>@s.Phone</td>
-                        <td class="text-end">@s.TotalSkus</td>
-                        <td class="text-end">@s.TotalQty</td>
-                        <td class="text-end">@s.LowStockSkus</td>
-                        <td class="text-end">
-                            <a class="btn btn-sm btn-eg" asp-area="Owner" asp-controller="ShopStocks" asp-action="Index" asp-route-shopId="@s.Id">
-                                View Stock
-                            </a>
-                        </td>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>City</th>
+                        <th>Country</th>
+                        <th>Phone</th>
+                        <th class="text-end">SKUs</th>
+                        <th class="text-end">Total Qty</th>
+                        <th class="text-end">Low Stock</th>
+                        <th></th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model)
+                    {
+                        <tr>
+                            <td>@s.ShopCode</td>
+                            <td>@s.ShopName</td>
+                            <td>@s.City</td>
+                            <td>@s.Country</td>
+                            <td>@s.Phone</td>
+                            <td class="text-end">@s.TotalSkus</td>
+                            <td class="text-end">@s.TotalQty</td>
+                            <td class="text-end">@s.LowStockSkus</td>
+                            <td class="text-end">
+                                <a class="eg-btn eg-btn-sm"
+                                   asp-area="Owner" asp-controller="ShopStocks" asp-action="Index"
+                                   asp-route-shopId="@s.Id">View Stock</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
