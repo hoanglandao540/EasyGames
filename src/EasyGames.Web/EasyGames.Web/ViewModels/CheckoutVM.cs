@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EasyGames.Web.ViewModels
 {
-    // We reuse CartRowVM lines so code stays DRY and student-friendly.
+    // We reuse CartRowVM lines .
     public class CheckoutVM
     {
         [Required, StringLength(80)]
