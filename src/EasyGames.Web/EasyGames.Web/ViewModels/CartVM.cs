@@ -1,24 +1,35 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace EasyGames.Web.ViewModels
 {
-    // I keep this student-friendly: one line per cart row, plus totals.
-    public class CartRowVM
-    {
-        public int ProductId { get; set; }
-        public string Name { get; set; } = "";
-        public decimal Price { get; set; }
-        public int Qty { get; set; }
-        public decimal LineTotal => Price * Qty;
-    }
-
     public class CartVM
     {
+        // Storage used by services/controllers
         public List<CartRowVM> Lines { get; set; } = new();
-        public int TotalItems { get; set; }
-        public decimal GrandTotal { get; set; }
+
+        // Alias so views can use Items or Lines interchangeably
+        public List<CartRowVM> Items
+        {
+            get => Lines;
+            set => Lines = value ?? new List<CartRowVM>();
+        }
+
+        // Totals (computed) but allow assignment if any controller sets them
+        private decimal? _grandTotalOverride;
+        public decimal GrandTotal
+        {
+            get => _grandTotalOverride ?? Lines.Sum(l => l.Price * l.Qty);
+            set => _grandTotalOverride = value;
+        }
+
+        private int? _totalItemsOverride;
+        public int TotalItems
+        {
+            get => _totalItemsOverride ?? Lines.Sum(l => l.Qty);
+            set => _totalItemsOverride = value;
+        }
     }
 }
-
 
 
