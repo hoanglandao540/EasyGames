@@ -7,18 +7,19 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 1) MVC
 builder.Services.AddControllersWithViews();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession();                 
+builder.Services.AddHttpContextAccessor();
+
+
 
 // 2) InMemory provider so everyone can run without SQL now
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseInMemoryDatabase("EasyGamesDb")); // <— this was missing
+    options.UseInMemoryDatabase("EasyGamesDb")); 
 
 // 3) App services 
 builder.Services.AddScoped<IInventoryService, InventoryService>();
-
-// Session + HttpContext accessor
-builder.Services.AddHttpContextAccessor();           
-builder.Services.AddSession();                       
-
+     
 // Cart service (session-backed)
 builder.Services.AddScoped<ICartService, CartService>();
 
@@ -44,8 +45,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 app.UseSession();
-
-app.UseAuthorization();
+app.UseAuthentication();
 
 
 // Areas route
