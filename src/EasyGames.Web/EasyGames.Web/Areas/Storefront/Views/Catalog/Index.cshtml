@@ -1,8 +1,56 @@
-﻿@{
-    ViewData["Title"] = "Storefront ▸ Catalog";
+﻿@model EasyGames.Web.ViewModels.CatalogVM
+@{
+    ViewData["Title"] = "Catalog";
 }
-<div class="container">
-    <h1 class="display-6 mb-3">Storefront / Catalog — placeholder</h1>
-    <p class="text-muted">Customers browse items here.</p>
-    <div class="alert alert-info">Product grid placeholder</div>
+
+@section Head {
+    <style>
+        :root{ --eg-bg:#0b0f19; --eg-surface:#0f172a; --eg-text:#e5e7eb; --eg-gold:#d4af37; --eg-border:rgba(212,175,55,.18); }
+        .eg-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap:16px; }
+        .eg-card{ background:linear-gradient(180deg,var(--eg-surface),#0b1220); border:1px solid var(--eg-border); border-radius:18px; box-shadow:0 10px 28px -14px rgba(0,0,0,.6); overflow:hidden; }
+        .eg-img { aspect-ratio: 16/10; background:#0d1222; display:flex; align-items:center; justify-content:center; color:#6b7280; }
+        .eg-body{ padding:14px; color:var(--eg-text); }
+        .eg-title{ color:var(--eg-gold); margin:0; font-weight:700; }
+        .eg-price { color:#cbd5e1; font-weight:600; }
+        .btn-eg{ background:var(--eg-gold); color:#111; font-weight:700; border:none; }
+        .btn-eg:hover{ background:#f1c40f; color:#111; }
+        .eg-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+        .eg-badge { font-size:.85rem; color:#111; background:var(--eg-gold); border-radius:999px; padding:.25rem .6rem; font-weight:700; }
+    </style>
+}
+
+<div class="mb-3 d-flex justify-content-between align-items-center">
+    <h2 class="m-0" style="color:var(--eg-gold)">Catalog</h2>
+    <span class="eg-badge">Cart: @Model.CartCount</span>
 </div>
+
+@if (TempData["Msg"] is string m)
+{
+    <div class="alert alert-dark border" role="alert" style="border-color:var(--eg-border)">@m</div>
+}
+
+<div class="eg-grid">
+    @foreach (var p in Model.Items)
+    {
+        <div class="eg-card">
+            <div class="eg-img">
+                @* In real app we show p.ImageUrl; for now this is a placeholder box *@
+                <span>Image @p.Id</span>
+            </div>
+            <div class="eg-body">
+                <div class="eg-top">
+                    <h5 class="eg-title">@p.Name</h5>
+                    <div class="eg-price">৳ @p.Price</div>
+                </div>
+                <form asp-area="Storefront" asp-controller="Catalog" asp-action="Add" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@p.Id" />
+                    <button class="btn btn-eg w-100" type="submit">Add to Cart</button>
+                </form>
+            </div>
+        </div>
+    }
+</div>
+
+
+

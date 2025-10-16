@@ -1,9 +1,112 @@
-﻿@{
-    ViewData["Title"] = "Owner ▸ Shop Stocks";
+﻿@model IEnumerable<EasyGames.Web.Models.ShopStock>
+@{
+    ViewData["Title"] = "Shop Stock";
+    var shopId = (int)ViewBag.ShopId;
+    var shopName = (string)ViewBag.ShopName;
 }
-<div class="container">
-    <h1 class="display-6 mb-3">Owner / Shop Stocks — placeholder</h1>
-    <p class="text-muted">Move items from owner inventory to shops.</p>
-    <a class="btn btn-primary" href="#">Add Stock To Shop</a>
-    <div class="mt-3 alert alert-info">Table placeholder</div>
+
+@section Head {
+    <style>
+        :root {
+            --eg-bg: #0b0f19;
+            --eg-surface: #0f172a;
+            --eg-text: #e5e7eb;
+            --eg-gold: #d4af37;
+            --eg-border: rgba(212,175,55,.18);
+        }
+
+        .eg-card {
+            background: linear-gradient(180deg,var(--eg-surface),#0b1220);
+            border: 1px solid var(--eg-border);
+            border-radius: 16px;
+            padding: 18px;
+            color: var(--eg-text);
+            box-shadow: 0 10px 28px -14px rgba(0,0,0,.6);
+        }
+
+        .eg-title {
+            color: var(--eg-gold);
+        }
+
+        .eg-table th {
+            color: var(--eg-gold);
+            border-bottom-color: var(--eg-border) !important;
+        }
+
+        .eg-table td {
+            color: var(--eg-text);
+            border-color: #182036 !important;
+        }
+
+        .btn-eg {
+            background: var(--eg-gold);
+            color: #111;
+            font-weight: 700;
+            border: none;
+        }
+
+            .btn-eg:hover {
+                background: #f1c40f;
+                color: #111;
+            }
+    </style>
+}
+
+<div class="mb-3">
+    <a class="text-decoration-none" asp-area="Owner" asp-controller="Shops" asp-action="Index">← Back to Shops</a>
 </div>
+
+<div class="eg-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="eg-title m-0">@shopName</h2>
+        <span class="small text-muted">Shop ID: @shopId</span>
+    </div>
+
+    @if (TempData["Msg"] is string m)
+    {
+        <div class="alert alert-dark border" role="alert" style="border-color:var(--eg-border)">@m</div>
+    }
+
+    <div class="table-responsive">
+        <table class="table table-sm eg-table align-middle">
+            <thead>
+                <tr>
+                    <th style="width:110px">Product Id</th>
+                    <th class="text-end" style="width:120px">Quantity</th>
+                    <th class="text-end" style="width:140px">Reorder Level</th>
+                    <th class="text-end" style="width:260px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var x in Model)
+                {
+                    <tr>
+                        <td>#{@x.ProductId}</td>
+                        <td class="text-end">@x.Quantity</td>
+                        <td class="text-end">@x.ReorderLevel</td>
+                        <td class="text-end">
+                            <form asp-area="Owner" asp-controller="ShopStocks" asp-action="Decrease" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="shopId" value="@shopId" />
+                                <input type="hidden" name="productId" value="@x.ProductId" />
+                                <input type="hidden" name="byQty" value="1" />
+                                <button class="btn btn-sm btn-outline-light me-1" type="submit">-1</button>
+                            </form>
+
+                            <form asp-area="Owner" asp-controller="ShopStocks" asp-action="Increase" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="shopId" value="@shopId" />
+                                <input type="hidden" name="productId" value="@x.ProductId" />
+                                <input type="hidden" name="byQty" value="1" />
+                                <button class="btn btn-sm btn-eg" type="submit">+1</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
