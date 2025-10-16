@@ -14,6 +14,8 @@ namespace EasyGames.Web.Data
         public DbSet<Shop> Shops => Set<Shop>();
         public DbSet<ShopStock> ShopStocks => Set<ShopStock>();
         public DbSet<AppUser> Users { get; set; } = null!;
+        public DbSet<Order> Orders => Set<Order>();
+        public DbSet<OrderLine> OrderLines => Set<OrderLine>();
         public DbSet<Product> Products => Set<Product>();
 
 
