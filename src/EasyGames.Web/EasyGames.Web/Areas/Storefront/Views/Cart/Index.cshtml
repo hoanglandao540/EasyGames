@@ -1,8 +1,125 @@
-﻿@{
-    ViewData["Title"] = "Storefront ▸ Cart";
+﻿@model EasyGames.Web.ViewModels.CartVM
+@{
+    ViewData["Title"] = "Cart";
 }
-<div class="container">
-    <h1 class="display-6 mb-3">Storefront / Cart — placeholder</h1>
-    <p class="text-muted">Session cart summary will appear here.</p>
-    <div class="alert alert-info">Cart table placeholder</div>
+
+@section Head {
+    <style>
+        :root {
+            --eg-bg: #0b0f19;
+            --eg-surface: #0f172a;
+            --eg-text: #e5e7eb;
+            --eg-gold: #d4af37;
+            --eg-border: rgba(212,175,55,.18);
+        }
+
+        .eg-card {
+            background: linear-gradient(180deg,var(--eg-surface),#0b1220);
+            border: 1px solid var(--eg-border);
+            border-radius: 16px;
+            padding: 18px;
+            color: var(--eg-text);
+            box-shadow: 0 10px 28px -14px rgba(0,0,0,.6);
+        }
+
+        .eg-title {
+            color: var(--eg-gold);
+        }
+
+        .eg-table th {
+            color: var(--eg-gold);
+            border-bottom-color: var(--eg-border) !important;
+        }
+
+        .eg-table td {
+            color: var(--eg-text);
+            border-color: #182036 !important;
+        }
+
+        .btn-eg {
+            background: var(--eg-gold);
+            color: #111;
+            font-weight: 700;
+            border: none;
+        }
+
+            .btn-eg:hover {
+                background: #f1c40f;
+                color: #111;
+            }
+    </style>
+}
+
+<div class="eg-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="eg-title m-0">Your Cart</h2>
+        <div class="small">Items: <strong>@Model.TotalItems</strong></div>
+    </div>
+
+    @if (!Model.Lines.Any())
+    {
+        <div class="alert alert-dark border" role="alert" style="border-color:var(--eg-border)">
+            Your cart is empty. <a asp-area="Storefront" asp-controller="Catalog" asp-action="Index">Go to Catalog</a>.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-sm eg-table align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:80px">ID</th>
+                        <th>Name</th>
+                        <th class="text-end" style="width:120px">Price</th>
+                        <th class="text-end" style="width:160px">Qty</th>
+                        <th class="text-end" style="width:140px">Line Total</th>
+                        <th class="text-end" style="width:240px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Lines)
+                    {
+                        <tr>
+                            <td>#@r.ProductId</td>
+                            <td>@r.Name</td>
+                            <td class="text-end">৳ @r.Price</td>
+                            <td class="text-end">@r.Qty</td>
+                            <td class="text-end">৳ @r.LineTotal</td>
+                            <td class="text-end">
+                                <form asp-area="Storefront" asp-controller="Cart" asp-action="Dec" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@r.ProductId" />
+                                    <button class="btn btn-sm btn-outline-light me-1" type="submit">-1</button>
+                                </form>
+                                <form asp-area="Storefront" asp-controller="Cart" asp-action="Inc" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@r.ProductId" />
+                                    <button class="btn btn-sm btn-eg me-1" type="submit">+1</button>
+                                </form>
+                                <form asp-area="Storefront" asp-controller="Cart" asp-action="Remove" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@r.ProductId" />
+                                    <button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div class="fs-5">Grand Total: <strong>৳ @Model.GrandTotal</strong></div>
+            <div>
+                <form asp-area="Storefront" asp-controller="Cart" asp-action="Clear" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-outline-light me-2" type="submit">Clear Cart</button>
+                </form>
+                <a class="btn btn-eg" asp-area="Storefront" asp-controller="Checkout" asp-action="Index">Checkout</a>
+            </div>
+        </div>
+    }
 </div>
+
+
+
