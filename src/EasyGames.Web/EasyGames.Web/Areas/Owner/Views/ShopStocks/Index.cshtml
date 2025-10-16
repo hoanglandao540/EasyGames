@@ -1,112 +1,153 @@
-﻿@model IEnumerable<EasyGames.Web.Models.ShopStock>
+﻿@model EasyGames.Web.ViewModels.ShopStocksVM
 @{
-    ViewData["Title"] = "Shop Stock";
-    var shopId = (int)ViewBag.ShopId;
-    var shopName = (string)ViewBag.ShopName;
+    ViewData["Title"] = "Shop Stocks";
 }
 
 @section Head {
     <style>
+        /* Midnight + Gold — per-page token pack */
         :root {
             --eg-bg: #0b0f19;
             --eg-surface: #0f172a;
-            --eg-text: #e5e7eb;
+            --eg-surface-2: #0b1222;
             --eg-gold: #d4af37;
-            --eg-border: rgba(212,175,55,.18);
+            --eg-gold-2: #f1c40f;
+            --eg-text: #cbd5e1;
+            --eg-border: #1e293b;
+            --eg-shadow: 0 6px 24px rgba(0,0,0,.35);
+        }
+
+        body {
+            background: var(--eg-bg);
+            color: var(--eg-text);
+        }
+
+        .eg-container {
+            max-width: 1100px;
+            margin: 24px auto;
+            padding: 0 12px;
         }
 
         .eg-card {
-            background: linear-gradient(180deg,var(--eg-surface),#0b1220);
-            border: 1px solid var(--eg-border);
-            border-radius: 16px;
+            background: var(--eg-surface);
+            border-radius: 14px;
             padding: 18px;
-            color: var(--eg-text);
-            box-shadow: 0 10px 28px -14px rgba(0,0,0,.6);
+            box-shadow: var(--eg-shadow);
         }
 
-        .eg-title {
+        .eg-h1 {
             color: var(--eg-gold);
+            margin: 0 0 10px;
+            font-weight: 700;
         }
 
-        .eg-table th {
-            color: var(--eg-gold);
-            border-bottom-color: var(--eg-border) !important;
-        }
-
-        .eg-table td {
-            color: var(--eg-text);
-            border-color: #182036 !important;
-        }
-
-        .btn-eg {
+        .eg-btn {
             background: var(--eg-gold);
             color: #111;
-            font-weight: 700;
             border: none;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-weight: 600;
         }
 
-            .btn-eg:hover {
-                background: #f1c40f;
-                color: #111;
+            .eg-btn:hover {
+                background: var(--eg-gold-2);
             }
+
+        .eg-btn-sm {
+            padding: 6px 10px;
+            border-radius: 8px;
+        }
+
+        .eg-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .eg-table th, .eg-table td {
+                padding: 10px;
+                border-bottom: 1px solid var(--eg-border);
+            }
+
+            .eg-table th {
+                color: var(--eg-gold);
+                font-weight: 600;
+            }
+
+        .eg-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+            .eg-toolbar a {
+                color: var(--eg-text);
+                text-decoration: none;
+            }
+
+        @@media (max-width:640px) {
+            .eg-container {
+                padding: 0 8px;
+            }
+        }
     </style>
 }
 
-<div class="mb-3">
-    <a class="text-decoration-none" asp-area="Owner" asp-controller="Shops" asp-action="Index">← Back to Shops</a>
-</div>
+<div class="eg-container">
+    <h2 class="eg-h1">Stocks — @Model.ShopName</h2>
 
-<div class="eg-card">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="eg-title m-0">@shopName</h2>
-        <span class="small text-muted">Shop ID: @shopId</span>
-    </div>
-
-    @if (TempData["Msg"] is string m)
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
     {
-        <div class="alert alert-dark border" role="alert" style="border-color:var(--eg-border)">@m</div>
+        <div style="margin:12px 0; padding:10px 14px; background:#123; border-left:4px solid var(--eg-gold); border-radius:10px;">
+            @Model.Message
+        </div>
     }
 
-    <div class="table-responsive">
-        <table class="table table-sm eg-table align-middle">
-            <thead>
-                <tr>
-                    <th style="width:110px">Product Id</th>
-                    <th class="text-end" style="width:120px">Quantity</th>
-                    <th class="text-end" style="width:140px">Reorder Level</th>
-                    <th class="text-end" style="width:260px">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var x in Model)
-                {
-                    <tr>
-                        <td>#{@x.ProductId}</td>
-                        <td class="text-end">@x.Quantity</td>
-                        <td class="text-end">@x.ReorderLevel</td>
-                        <td class="text-end">
-                            <form asp-area="Owner" asp-controller="ShopStocks" asp-action="Decrease" method="post" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="shopId" value="@shopId" />
-                                <input type="hidden" name="productId" value="@x.ProductId" />
-                                <input type="hidden" name="byQty" value="1" />
-                                <button class="btn btn-sm btn-outline-light me-1" type="submit">-1</button>
-                            </form>
+    <div class="eg-card">
+        <div class="eg-toolbar">
+            <a asp-area="Owner" asp-controller="Shops" asp-action="Index" class="eg-btn eg-btn-sm">← Back to Shops</a>
+        </div>
 
-                            <form asp-area="Owner" asp-controller="ShopStocks" asp-action="Increase" method="post" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="shopId" value="@shopId" />
-                                <input type="hidden" name="productId" value="@x.ProductId" />
-                                <input type="hidden" name="byQty" value="1" />
-                                <button class="btn btn-sm btn-eg" type="submit">+1</button>
-                            </form>
-                        </td>
+        <div class="table-responsive">
+            <table class="eg-table">
+                <thead>
+                    <tr>
+                        <th>Product Id</th>
+                        <th>Name</th>
+                        <th class="text-end">Qty</th>
+                        <th class="text-end">Reorder</th>
+                        <th class="text-end">Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Rows)
+                    {
+                        <tr>
+                            <td>@r.ProductId</td>
+                            <td>@r.ProductName</td>
+                            <td class="text-end">@r.Qty</td>
+                            <td class="text-end">@r.ReorderLevel</td>
+                            <td class="text-end">
+                                <form asp-area="Owner" asp-controller="ShopStocks" asp-action="Dec" method="post" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="shopId" value="@Model.ShopId" />
+                                    <input type="hidden" name="productId" value="@r.ProductId" />
+                                    <button class="eg-btn eg-btn-sm" type="submit">–</button>
+                                </form>
+                                <form asp-area="Owner" asp-controller="ShopStocks" asp-action="Inc" method="post" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="shopId" value="@Model.ShopId" />
+                                    <input type="hidden" name="productId" value="@r.ProductId" />
+                                    <button class="eg-btn eg-btn-sm" type="submit">+</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
-
 
 
