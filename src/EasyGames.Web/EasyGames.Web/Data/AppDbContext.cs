@@ -13,6 +13,8 @@ namespace EasyGames.Web.Data
 
         public DbSet<Shop> Shops => Set<Shop>();
         public DbSet<ShopStock> ShopStocks => Set<ShopStock>();
+        public DbSet<AppUser> Users { get; set; } = null!;
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -25,7 +27,9 @@ namespace EasyGames.Web.Data
                 .HasForeignKey(ss => ss.ShopId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            
+            modelBuilder.Entity<AppUser>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
         }
 
         // UpdatedAtUtc auto-bump on every change; CreatedAtUtc only on insert

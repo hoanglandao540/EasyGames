@@ -26,6 +26,19 @@ namespace EasyGames.Web.Data
                 UpdatedAtUtc = DateTime.UtcNow
             };
 
+            // Seed users if empty
+            if (!db.Users.Any())
+            {
+                db.Users.AddRange(
+                    new AppUser { FullName = "Fabiha Sultana Anushe", Email = "fabiha.anushe25@gmail.com", Role = "Manager", IsActive = true },
+                    new AppUser { FullName = "Akshata Bhusal", Email = "akshatabhusal80@gmail.com", Role = "Staff", IsActive = true }
+                );
+                db.SaveChanges();
+            }
+
+
+
+
             // We'll reference simple fake product IDs for now (1001..1003).
             var stocks = new[]
             {

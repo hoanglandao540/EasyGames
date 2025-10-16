@@ -1,9 +1,136 @@
-﻿@{
-    ViewData["Title"] = "Owner ▸ Users";
+﻿@model IEnumerable<EasyGames.Web.ViewModels.UserVM>
+@{
+    ViewData["Title"] = "Users";
 }
-<div class="container">
-    <h1 class="display-6 mb-3">Owner / Users — placeholder</h1>
-    <p class="text-muted">Here we will manage users/roles later.</p>
-    <a class="btn btn-primary" href="#">Add User</a>
-    <div class="mt-3 alert alert-info">Table placeholder</div>
+
+@section Head {
+    <style>
+        :root {
+            --eg-bg: #0b0f19;
+            --eg-surface: #0f172a;
+            --eg-surface-2: #0b1222;
+            --eg-gold: #d4af37;
+            --eg-gold-2: #f1c40f;
+            --eg-text: #cbd5e1;
+            --eg-border: #1e293b;
+            --eg-shadow: 0 6px 24px rgba(0,0,0,.35);
+        }
+
+        body {
+            background: var(--eg-bg);
+            color: var(--eg-text);
+        }
+
+        .eg-container {
+            max-width: 1100px;
+            margin: 24px auto;
+            padding: 0 12px;
+        }
+
+        .eg-card {
+            background: var(--eg-surface);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: var(--eg-shadow);
+        }
+
+        .eg-h1 {
+            color: var(--eg-gold);
+            margin: 0 0 10px;
+            font-weight: 700;
+        }
+
+        .eg-btn {
+            background: var(--eg-gold);
+            color: #111;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-weight: 600;
+        }
+
+            .eg-btn:hover {
+                background: var(--eg-gold-2);
+            }
+
+        .eg-btn-sm {
+            padding: 6px 10px;
+            border-radius: 8px;
+        }
+
+        .eg-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .eg-table th, .eg-table td {
+                padding: 10px;
+                border-bottom: 1px solid var(--eg-border);
+            }
+
+            .eg-table th {
+                color: var(--eg-gold);
+                font-weight: 600;
+            }
+
+        .eg-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            justify-content: flex-end;
+        }
+    </style>
+}
+
+<div class="eg-container">
+    <h2 class="eg-h1">Users</h2>
+
+    @if (TempData["msg"] is string m && !string.IsNullOrWhiteSpace(m))
+    {
+        <div style="margin:12px 0; padding:10px 14px; background:#123; border-left:4px solid var(--eg-gold); border-radius:10px;">
+            @m
+        </div>
+    }
+
+    <div class="eg-card">
+        <div class="eg-toolbar">
+            <a class="eg-btn eg-btn-sm" asp-area="Owner" asp-controller="Users" asp-action="Create">Add User</a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="eg-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th class="text-end">Active</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Model)
+                    {
+                        <tr>
+                            <td>@u.FullName</td>
+                            <td>@u.Email</td>
+                            <td>@u.Role</td>
+                            <td class="text-end">@(u.IsActive ? "Yes" : "No")</td>
+                            <td class="text-end">
+                                <a class="eg-btn eg-btn-sm" asp-area="Owner" asp-controller="Users" asp-action="Edit" asp-route-id="@u.Id">Edit</a>
+                                <form asp-area="Owner" asp-controller="Users" asp-action="Delete" method="post" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@u.Id" />
+                                    <button class="eg-btn eg-btn-sm" type="submit" onclick="return confirm('Delete this user?');">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
+
