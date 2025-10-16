@@ -1,15 +1,41 @@
+using EasyGames.Web.Data;
+using EasyGames.Web.Services;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 1) MVC
 builder.Services.AddControllersWithViews();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession();                 
+builder.Services.AddHttpContextAccessor();
+
+
+
+// 2) InMemory provider so everyone can run without SQL now
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseInMemoryDatabase("EasyGamesDb")); 
+
+// 3) App services 
+builder.Services.AddScoped<IInventoryService, InventoryService>();
+
+
+
+
 
 var app = builder.Build();
+// seed initial data
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    DbSeeder.Seed(db);
+}
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 
@@ -17,8 +43,17 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseSession();
+app.UseAuthentication();
+
 
 app.UseAuthorization();
+
+// Areas route
+app.MapControllerRoute(
+    name: "areas",
+    pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
+
 
 // Default route
 app.MapControllerRoute(
@@ -26,9 +61,5 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 
-// Areas route
-app.MapControllerRoute(
-    name: "areas",
-    pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
