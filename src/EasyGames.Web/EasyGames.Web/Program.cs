@@ -1,6 +1,10 @@
+using EasyGames.Web.Data;
+using EasyGames.Web.Services;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 1) MVC
 builder.Services.AddControllersWithViews();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession();                 
@@ -8,7 +12,25 @@ builder.Services.AddHttpContextAccessor();
 
 
 
+// 2) InMemory provider so everyone can run without SQL now
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseInMemoryDatabase("EasyGamesDb")); // <— this was missing
+
+// 3) App services 
+builder.Services.AddScoped<IInventoryService, InventoryService>();
+
+
+
+
+
 var app = builder.Build();
+// seed initial data
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    DbSeeder.Seed(db);
+}
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
