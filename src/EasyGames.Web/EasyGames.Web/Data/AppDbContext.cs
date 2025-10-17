@@ -3,6 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using EasyGames.Web.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
+using EasyGames.Web.Data;
+
 
 namespace EasyGames.Web.Data
 {
