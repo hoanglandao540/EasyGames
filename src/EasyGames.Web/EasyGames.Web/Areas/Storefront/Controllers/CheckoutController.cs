@@ -1,7 +1,11 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
+using EasyGames.Web.Data;
+using EasyGames.Web.Models;
 using EasyGames.Web.Services;
 using EasyGames.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EasyGames.Web.Areas.Storefront.Controllers
 {
@@ -9,16 +13,18 @@ namespace EasyGames.Web.Areas.Storefront.Controllers
     public class CheckoutController : Controller
     {
         private readonly ICartService _cart;
+        private readonly AppDbContext _db;
 
-        public CheckoutController(ICartService cart)
+        public CheckoutController(ICartService cart, AppDbContext db)
         {
             _cart = cart;
+            _db = db;
         }
 
         // GET: /Storefront/Checkout
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var vm = BuildVmFromCart();
+            var vm = await BuildVmFromCartAsync();
             if (!vm.Lines.Any())
             {
                 TempData["Msg"] = "Your cart is empty. Please add items first.";
@@ -29,10 +35,9 @@ namespace EasyGames.Web.Areas.Storefront.Controllers
 
         // POST: /Storefront/Checkout
         [HttpPost, ValidateAntiForgeryToken]
-        public IActionResult Index(CheckoutVM form)
+        public async Task<IActionResult> Index(CheckoutVM form)
         {
-            // Rehydrated cart lines so the page can re-render on validation errors
-            var vm = BuildVmFromCart();
+            var vm = await BuildVmFromCartAsync();
             form.Lines = vm.Lines;
             form.TotalItems = vm.TotalItems;
             form.GrandTotal = vm.GrandTotal;
@@ -45,13 +50,30 @@ namespace EasyGames.Web.Areas.Storefront.Controllers
 
             if (!ModelState.IsValid)
             {
-                // we simply re-show the form with validation messages.
                 return View(form);
             }
 
-            
-            _cart.Clear();
+            // Create a real Order + Lines (Channel=Online)
+            var order = new Order
+            {
+                Channel = "Online",
+                CustomerName = form.CustomerName,
+                CustomerEmail = form.Email,
+                Phone = form.Phone,
+                Total = form.GrandTotal,
+                Lines = form.Lines.Select(l => new OrderLine
+                {
+                    ProductId = l.ProductId,
+                    Name = l.Name,
+                    Price = l.Price,
+                    Qty = l.Qty
+                }).ToList()
+            };
 
+            _db.Orders.Add(order);
+            await _db.SaveChangesAsync();
+
+            _cart.Clear();
             return RedirectToAction(nameof(Success));
         }
 
@@ -61,22 +83,26 @@ namespace EasyGames.Web.Areas.Storefront.Controllers
             return View();
         }
 
-        // helper: map cart -> VM
-        private CheckoutVM BuildVmFromCart()
+        // helper: map cart -> VM using DB products
+        private async Task<CheckoutVM> BuildVmFromCartAsync()
         {
             var map = _cart.Get(); // productId -> qty
+            var ids = map.Keys.ToList();
+            var products = await _db.Products.AsNoTracking()
+                .Where(p => ids.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id);
 
             var lines = map.Select(kv =>
             {
                 var id = kv.Key;
                 var qty = kv.Value;
-                ProductCatalog.TryGet(id, out var info);
+                products.TryGetValue(id, out var p);
 
                 return new CartRowVM
                 {
                     ProductId = id,
-                    Name = info?.Name ?? "Unknown",
-                    Price = info?.Price ?? 0m,
+                    Name = p?.Name ?? "Unknown",
+                    Price = p?.Price ?? 0m,
                     Qty = qty
                 };
             }).ToList();
@@ -90,6 +116,5 @@ namespace EasyGames.Web.Areas.Storefront.Controllers
         }
     }
 }
-
 
 

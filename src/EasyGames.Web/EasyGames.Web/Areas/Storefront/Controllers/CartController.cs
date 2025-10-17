@@ -1,7 +1,10 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
+using EasyGames.Web.Data;
 using EasyGames.Web.Services;
 using EasyGames.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EasyGames.Web.Areas.Storefront.Controllers
 {
@@ -9,30 +12,38 @@ namespace EasyGames.Web.Areas.Storefront.Controllers
     public class CartController : Controller
     {
         private readonly ICartService _cart;
+        private readonly AppDbContext _db;
 
-        public CartController(ICartService cart)
+        public CartController(ICartService cart, AppDbContext db)
         {
             _cart = cart;
+            _db = db;
         }
 
         // GET: /Storefront/Cart
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var map = _cart.Get(); // productId -> qty
+            // 1) Get productId -> qty from session cart
+            var map = _cart.Get();
 
+            // 2) Load products for those ids (single round-trip)
+            var ids = map.Keys.ToList();
+            var products = await _db.Products.AsNoTracking()
+                .Where(p => ids.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id);
+
+            // 3) Build rows
             var lines = map.Select(kv =>
             {
                 var id = kv.Key;
                 var qty = kv.Value;
-
-                // Look up product meta from the shared catalog
-                ProductCatalog.TryGet(id, out var info);
+                products.TryGetValue(id, out var p);
 
                 return new CartRowVM
                 {
                     ProductId = id,
-                    Name = info?.Name ?? "Unknown",
-                    Price = info?.Price ?? 0m,
+                    Name = p?.Name ?? "Unknown",
+                    Price = p?.Price ?? 0m,
                     Qty = qty
                 };
             }).ToList();
@@ -47,7 +58,6 @@ namespace EasyGames.Web.Areas.Storefront.Controllers
             return View(vm);
         }
 
-        // POST: /Storefront/Cart/Inc
         [HttpPost, ValidateAntiForgeryToken]
         public IActionResult Inc(int id)
         {
@@ -55,23 +65,20 @@ namespace EasyGames.Web.Areas.Storefront.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: /Storefront/Cart/Dec
         [HttpPost, ValidateAntiForgeryToken]
         public IActionResult Dec(int id)
         {
-            _cart.Remove(id, 1); // service clamps to 0, removes when <=0
+            _cart.Remove(id, 1);
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: /Storefront/Cart/Remove
         [HttpPost, ValidateAntiForgeryToken]
         public IActionResult Remove(int id)
         {
-            _cart.Remove(id, int.MaxValue); // remove fully
+            _cart.Remove(id, int.MaxValue);
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: /Storefront/Cart/Clear
         [HttpPost, ValidateAntiForgeryToken]
         public IActionResult Clear()
         {
@@ -80,6 +87,5 @@ namespace EasyGames.Web.Areas.Storefront.Controllers
         }
     }
 }
-
 
 
