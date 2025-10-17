@@ -3,6 +3,7 @@ using System;
 using EasyGames.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EasyGames.Web.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251017004012_InitAll")]
+    partial class InitAll
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
@@ -114,12 +117,6 @@ namespace EasyGames.Web.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-<<<<<<< HEAD
-=======
-                    b.Property<decimal>("CostPrice")
-                        .HasColumnType("TEXT");
-
->>>>>>> origin/feature/akshata/db-skeleton
                     b.Property<string>("ImageUrl")
                         .HasColumnType("TEXT");
 
@@ -174,12 +171,6 @@ namespace EasyGames.Web.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
 
-<<<<<<< HEAD
-=======
-                    b.Property<bool>("IsWarehouse")
-                        .HasColumnType("INTEGER");
-
->>>>>>> origin/feature/akshata/db-skeleton
                     b.Property<string>("Phone")
                         .HasMaxLength(24)
                         .HasColumnType("TEXT");
