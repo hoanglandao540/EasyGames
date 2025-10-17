@@ -17,7 +17,8 @@ namespace EasyGames.Web.Data
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderLine> OrderLines => Set<OrderLine>();
         public DbSet<Product> Products => Set<Product>();
-
+        public DbSet<Order> Orders => Set<Order>();
+        public DbSet<OrderLine> OrderLines => Set<OrderLine>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

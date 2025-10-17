@@ -1,140 +1,228 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
+﻿using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using EasyGames.Web.ViewModels;
 using EasyGames.Web.Data;
+using EasyGames.Web.Models;       // Order / OrderLine
 using EasyGames.Web.Services;
+using EasyGames.Web.ViewModels;
+using Microsoft.AspNetCore.Http;  // Session GetInt32/SetInt32
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EasyGames.Web.Areas.Shop.Controllers
 {
     [Area("Shop")]
     public class PosController : Controller
     {
-        private const string SessionKey = "pos_cart_v1";
         private readonly AppDbContext _db;
+        private readonly ICartService _cart;
         private readonly IInventoryService _inventory;
 
-        // We inject Db + Inventory so we can decrease stock on Pay
-        public PosController(AppDbContext db, IInventoryService inventory)
+        // Keep the active ShopId in session so it never falls back to 0
+        private const string PosShopIdKey = "POS_ShopId";
+
+        public PosController(AppDbContext db, ICartService cart, IInventoryService inventory)
         {
             _db = db;
+            _cart = cart;
             _inventory = inventory;
         }
 
-        [HttpGet]
-        public IActionResult Index()
+        // Normalize incoming shopId: if 0/invalid, use session value; default to 1.
+        private int ResolveShopId(int shopId)
         {
+            if (shopId > 0) return shopId;
+            var saved = HttpContext.Session.GetInt32(PosShopIdKey);
+            return (saved.HasValue && saved.Value > 0) ? saved.Value : 1;
+        }
+
+        // GET: /Shop/Pos
+        public async Task<IActionResult> Index(int shopId = 0)
+        {
+            shopId = ResolveShopId(shopId);
+            HttpContext.Session.SetInt32(PosShopIdKey, shopId);
+
+            var map = _cart.Get(); // productId -> qty
+
+            var ids = map.Keys.ToList();
+            var products = await _db.Products.AsNoTracking()
+                .Where(p => ids.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id);
+
+            var lines = map.Select(kv =>
+            {
+                var id = kv.Key;
+                var qty = kv.Value;
+                products.TryGetValue(id, out var p);
+
+                return new PosLineVM
+                {
+                    ProductId = id,
+                    Name = p?.Name ?? "Unknown",
+                    Price = p?.Price ?? 0m,
+                    Qty = qty
+                };
+            }).ToList();
+
             var vm = new PosVM
             {
-                Lines = LoadLines(),
-                Message = TempData["msg"] as string
+                ShopId = shopId,
+                CustomerPhone = "",
+                Lines = lines
             };
+
             return View(vm);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult AddLine(int productId, string productName, decimal price, int qty)
-        {
-            if (qty < 1) qty = 1;
+        // -------------------- POS Cart Endpoints --------------------
 
-            var lines = LoadLines();
-            var line = lines.FirstOrDefault(x => x.ProductId == productId);
-            if (line == null)
+        // AddLine (GET)
+        [HttpGet, ActionName("AddLine")]
+        public IActionResult AddLine_Get(int shopId = 0, int productId = 0, int qty = 1)
+        {
+            shopId = ResolveShopId(shopId);
+            if (productId > 0) _cart.Add(productId, qty <= 0 ? 1 : qty);
+            return RedirectToAction(nameof(Index), new { shopId });
+        }
+
+        // AddLine (POST)
+        [HttpPost, ValidateAntiForgeryToken, ActionName("AddLine")]
+        public IActionResult AddLine_Post(int shopId, int productId, int qty)
+        {
+            shopId = ResolveShopId(shopId);
+            if (productId > 0) _cart.Add(productId, qty <= 0 ? 1 : qty);
+            return RedirectToAction(nameof(Index), new { shopId });
+        }
+
+        // DecLine (GET)
+        [HttpGet, ActionName("DecLine")]
+        public IActionResult DecLine_Get(int shopId = 0, int productId = 0)
+        {
+            shopId = ResolveShopId(shopId);
+            if (productId > 0) _cart.Remove(productId, 1);
+            return RedirectToAction(nameof(Index), new { shopId });
+        }
+
+        // DecLine (POST)
+        [HttpPost, ValidateAntiForgeryToken, ActionName("DecLine")]
+        public IActionResult DecLine_Post(int shopId, int productId)
+        {
+            shopId = ResolveShopId(shopId);
+            if (productId > 0) _cart.Remove(productId, 1);
+            return RedirectToAction(nameof(Index), new { shopId });
+        }
+
+        // RemoveLine (GET)
+        [HttpGet, ActionName("RemoveLine")]
+        public IActionResult RemoveLine_Get(int shopId = 0, int productId = 0)
+        {
+            shopId = ResolveShopId(shopId);
+            if (productId > 0) _cart.Remove(productId, int.MaxValue);
+            return RedirectToAction(nameof(Index), new { shopId });
+        }
+
+        // RemoveLine (POST)
+        [HttpPost, ValidateAntiForgeryToken, ActionName("RemoveLine")]
+        public IActionResult RemoveLine_Post(int shopId, int productId)
+        {
+            shopId = ResolveShopId(shopId);
+            if (productId > 0) _cart.Remove(productId, int.MaxValue);
+            return RedirectToAction(nameof(Index), new { shopId });
+        }
+
+        // Clear (GET)
+        [HttpGet, ActionName("Clear")]
+        public IActionResult Clear_Get(int shopId = 0)
+        {
+            shopId = ResolveShopId(shopId);
+            _cart.Clear();
+            return RedirectToAction(nameof(Index), new { shopId });
+        }
+
+        // Clear (POST)
+        [HttpPost, ValidateAntiForgeryToken, ActionName("Clear")]
+        public IActionResult Clear_Post(int shopId)
+        {
+            shopId = ResolveShopId(shopId);
+            _cart.Clear();
+            return RedirectToAction(nameof(Index), new { shopId });
+        }
+
+        // -------------------- Pay --------------------
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Pay(int shopId, string customerPhone)
+        {
+            shopId = ResolveShopId(shopId);
+
+            var map = _cart.Get();
+            if (map.Count == 0)
             {
-                lines.Add(new PosLineVM
+                TempData["Msg"] = "Cart is empty.";
+                return RedirectToAction(nameof(Index), new { shopId });
+            }
+
+            var ids = map.Keys.ToList();
+            var products = await _db.Products.AsNoTracking()
+                .Where(p => ids.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id);
+
+            var lines = map.Select(kv =>
+            {
+                var id = kv.Key;
+                var qty = kv.Value;
+                products.TryGetValue(id, out var p);
+
+                return new PosLineVM
                 {
-                    ProductId = productId,
-                    ProductName = productName ?? "",
-                    UnitPrice = price,
-                    Quantity = qty
-                });
-            }
-            else
+                    ProductId = id,
+                    Name = p?.Name ?? "Unknown",
+                    Price = p?.Price ?? 0m,
+                    Qty = qty
+                };
+            }).ToList();
+
+            decimal total = lines.Sum(x => x.LineTotal);
+
+            var order = new Order
             {
-                line.Quantity += qty;
-            }
-
-            SaveLines(lines);
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult RemoveLine(int productId)
-        {
-            var lines = LoadLines().Where(x => x.ProductId != productId).ToList();
-            SaveLines(lines);
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Clear()
-        {
-            SaveLines(new List<PosLineVM>());
-            return RedirectToAction(nameof(Index));
-        }
-
-        // NOW does real stock decrease (never negative – service enforces)
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Pay()
-        {
-            var lines = LoadLines();
-            if (lines.Count == 0)
-            {
-                TempData["msg"] = "No items to pay.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var shop = _db.Shops.FirstOrDefault();
-            if (shop == null)
-            {
-                TempData["msg"] = "Shop not found (seed missing).";
-                return RedirectToAction(nameof(Index));
-            }
-
-            try
-            {
-                // Decrease each product stock
-                foreach (var ln in lines)
+                Channel = "POS",
+                CustomerName = null,
+                CustomerEmail = null,
+                Phone = customerPhone,
+                Total = total,
+                Lines = lines.Select(l => new OrderLine
                 {
-                    // InventoryService from Akshata handles 'no negatives'
-                    await _inventory.DecreaseAsync(shop.Id, ln.ProductId, ln.Quantity);
-                }
+                    ProductId = l.ProductId,
+                    Name = l.Name,
+                    Price = l.Price,
+                    Qty = l.Qty
+                }).ToList()
+            };
 
-                SaveLines(new List<PosLineVM>());
-                TempData["msg"] = "Payment complete. Stock updated.";
-            }
-            catch (System.Exception ex)
+            _db.Orders.Add(order);
+            await _db.SaveChangesAsync();
+
+            bool anyNegative = false;
+            foreach (var l in lines)
             {
-                TempData["msg"] = "Payment failed: " + ex.Message;
+                await _inventory.DecreaseAsync(shopId, l.ProductId, l.Qty, allowOversell: true);
+
+                var stock = await _db.ShopStocks.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.ShopId == shopId && s.ProductId == l.ProductId);
+
+                if (stock != null && stock.Quantity < 0)
+                    anyNegative = true;
             }
 
-            return RedirectToAction(nameof(Index));
+            _cart.Clear();
+
+            if (anyNegative)
+                TempData["Msg"] = "Order saved, but one or more items went below zero (oversell).";
+
+            return RedirectToAction(nameof(Success));
         }
 
-        //  Session helpers 
-        private List<PosLineVM> LoadLines()
-        {
-            var str = HttpContext.Session.GetString(SessionKey);
-            if (string.IsNullOrWhiteSpace(str)) return new List<PosLineVM>();
-
-            var lines = JsonSerializer.Deserialize<List<PosLineVM>>(str,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            return lines ?? new List<PosLineVM>();
-        }
-
-        private void SaveLines(List<PosLineVM> lines)
-        {
-            var json = JsonSerializer.Serialize(lines);
-            HttpContext.Session.SetString(SessionKey, json);
-        }
+        public IActionResult Success() => View();
     }
 }
-
 
 
