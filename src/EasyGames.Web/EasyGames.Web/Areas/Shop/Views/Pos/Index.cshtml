@@ -5,28 +5,72 @@
 
 @section Head {
     <style>
-        
-        :root { --eg-bg:#0b0f19; --eg-surface:#0f172a; --eg-gold:#d4af37; --eg-gold2:#f1c40f; --eg-text:#cbd5e1; }
-        body { background: var(--eg-bg); color: var(--eg-text); }
-        .pos-card { background: var(--eg-surface); border-radius: 14px; padding: 18px; box-shadow: 0 6px 24px rgba(0,0,0,.35); }
-        .btn-eg { background: var(--eg-gold); color:#111; border: none; border-radius: 10px; padding: 8px 14px; }
-        .btn-eg:hover { background: var(--eg-gold2); }
-        .eg-input { background:#0b1222; color:#e5e7eb; border:1px solid #1f2a44; border-radius: 10px; padding:8px 10px; }
-        .eg-table { width:100%; border-collapse: collapse; }
-        .eg-table th, .eg-table td { padding:10px; border-bottom:1px solid #1e293b; }
-        .eg-total { font-size: 1.15rem; color: var(--eg-gold); }
-
-       
-        @@media (max-width: 640px) {
-            .grid { display:block; }
+        :root {
+            --eg-bg: #0b0f19;
+            --eg-surface: #0f172a;
+            --eg-gold: #d4af37;
+            --eg-gold2: #f1c40f;
+            --eg-text: #cbd5e1;
         }
 
+        body {
+            background: var(--eg-bg);
+            color: var(--eg-text);
+        }
 
+        .pos-card {
+            background: var(--eg-surface);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 6px 24px rgba(0,0,0,.35);
+        }
+
+        .btn-eg {
+            background: var(--eg-gold);
+            color: #111;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 14px;
+        }
+
+            .btn-eg:hover {
+                background: var(--eg-gold2);
+            }
+
+        .eg-input {
+            background: #0b1222;
+            color: #e5e7eb;
+            border: 1px solid #1f2a44;
+            border-radius: 10px;
+            padding: 8px 10px;
+        }
+
+        .eg-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .eg-table th, .eg-table td {
+                padding: 10px;
+                border-bottom: 1px solid #1e293b;
+            }
+
+        .eg-total {
+            font-size: 1.15rem;
+            color: var(--eg-gold);
+        }
+
+        @@media (max-width: 640px) {
+            .grid {
+                display: block;
+            }
+        }
     </style>
 }
 
 <div class="container" style="max-width:1100px; margin-top:24px;">
     <h2 style="color:var(--eg-gold);">Point of Sale</h2>
+    <div style="opacity:.8;margin-bottom:8px;">Shop: <strong>@Model.ShopId</strong></div>
 
     @if (!string.IsNullOrWhiteSpace(Model.Message))
     {
@@ -37,16 +81,23 @@
 
     <div class="pos-card" style="margin-top:12px;">
         <h4 style="margin-bottom:10px;">Add Line (temporary manual mode)</h4>
+
+        <!-- NOTE: Only productId and qty are used by the controller.
+             Product Name / Unit Price inputs are placeholders for now. -->
         <form asp-area="Shop" asp-controller="Pos" asp-action="AddLine" method="post">
             @Html.AntiForgeryToken()
+            <input type="hidden" name="shopId" value="@Model.ShopId" />
             <div class="grid" style="display:grid; grid-template-columns: 140px 1fr 140px 120px auto; gap:10px; align-items:center;">
                 <input class="eg-input" type="number" name="productId" placeholder="Product Id" required />
-                <input class="eg-input" type="text" name="productName" placeholder="Product Name" required />
-                <input class="eg-input" type="number" step="0.01" name="price" placeholder="Unit Price" required />
-                <input class="eg-input" type="number" name="qty" placeholder="Qty" value="1" min="1" required />
+                <input class="eg-input" type="text" name="productName" placeholder="Product Name (not used yet)" />
+                <input class="eg-input" type="number" step="0.01" name="price" placeholder="Unit Price (not used yet)" />
+                <input class="eg-input" type="number" name="qty" value="1" min="1" required />
                 <button class="btn-eg" type="submit">Add</button>
             </div>
         </form>
+        <div style="margin-top:6px; font-size:.9rem; opacity:.8;">
+            Tip: POS uses the <em>Product Id</em> to read name/price from DB. The Name/Price inputs above are placeholders.
+        </div>
     </div>
 
     <div class="pos-card" style="margin-top:16px;">
@@ -70,23 +121,24 @@
                     </tr>
                 </thead>
                 <tbody>
-                @foreach (var line in Model.Lines)
-                {
-                    <tr>
-                        <td>@line.ProductId</td>
-                        <td>@line.ProductName</td>
-                        <td style="text-align:right;">@line.UnitPrice.ToString("0.00")</td>
-                        <td style="text-align:right;">@line.Quantity</td>
-                        <td style="text-align:right;">@line.LineTotal.ToString("0.00")</td>
-                        <td style="text-align:right;">
-                            <form asp-area="Shop" asp-controller="Pos" asp-action="RemoveLine" method="post" style="display:inline;">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="productId" value="@line.ProductId" />
-                                <button class="btn-eg" type="submit" title="Remove">Remove</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
+                    @foreach (var line in Model.Lines)
+                    {
+                        <tr>
+                            <td>@line.ProductId</td>
+                            <td>@line.ProductName</td>
+                            <td style="text-align:right;">@line.UnitPrice.ToString("0.00")</td>
+                            <td style="text-align:right;">@line.Quantity</td>
+                            <td style="text-align:right;">@line.LineTotal.ToString("0.00")</td>
+                            <td style="text-align:right;">
+                                <form asp-area="Shop" asp-controller="Pos" asp-action="RemoveLine" method="post" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="shopId" value="@Model.ShopId" />
+                                    <input type="hidden" name="productId" value="@line.ProductId" />
+                                    <button class="btn-eg" type="submit" title="Remove">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
 
@@ -95,10 +147,14 @@
                 <div>
                     <form asp-area="Shop" asp-controller="Pos" asp-action="Clear" method="post" style="display:inline;">
                         @Html.AntiForgeryToken()
+                        <input type="hidden" name="shopId" value="@Model.ShopId" />
                         <button class="btn-eg" type="submit">Clear</button>
                     </form>
+
                     <form asp-area="Shop" asp-controller="Pos" asp-action="Pay" method="post" style="display:inline; margin-left:8px;">
                         @Html.AntiForgeryToken()
+                        <input type="hidden" name="shopId" value="@Model.ShopId" />
+                        <input name="customerPhone" class="eg-input" placeholder="Customer Phone" style="width:200px; margin-right:6px;" />
                         <button class="btn-eg" type="submit">Pay</button>
                     </form>
                 </div>
@@ -106,6 +162,5 @@
         }
     </div>
 </div>
-
 
 

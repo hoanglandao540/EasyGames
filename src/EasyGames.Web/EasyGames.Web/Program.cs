@@ -15,7 +15,8 @@ builder.Services.AddHttpContextAccessor();
 
 // 2) InMemory provider so everyone can run without SQL now
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseInMemoryDatabase("EasyGamesDb")); 
+    options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
+
 
 // 3) App services 
 builder.Services.AddScoped<IInventoryService, InventoryService>();
@@ -29,6 +30,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
     DbSeeder.Seed(db);
 }
 

@@ -3,24 +3,29 @@ using System.Linq;
 
 namespace EasyGames.Web.ViewModels
 {
-    // A single line in the POS cart (student-level simple model)
     public class PosLineVM
     {
         public int ProductId { get; set; }
-        public string ProductName { get; set; } = "";
-        public decimal UnitPrice { get; set; }
-        public int Quantity { get; set; }
-        public decimal LineTotal => UnitPrice * Quantity;
+        public string Name { get; set; } = "";
+        public decimal Price { get; set; }
+        public int Qty { get; set; }
+        public decimal LineTotal => Price * Qty;
+
+        // aliases for any old views
+        public string ProductName { get => Name; set => Name = value; }
+        public decimal UnitPrice { get => Price; set => Price = value; }
+        public int Quantity { get => Qty; set => Qty = value; }
     }
 
-    // The full POS page view model
     public class PosVM
     {
-        public List<PosLineVM> Lines { get; set; } = new List<PosLineVM>();
+        public int ShopId { get; set; } = 1;
+        public string CustomerPhone { get; set; } = "";
+        public List<PosLineVM> Lines { get; set; } = new();
+        public int TotalItems => Lines?.Sum(x => x.Qty) ?? 0;
+        public decimal GrandTotal => Lines?.Sum(x => x.LineTotal) ?? 0m;
         public string? Message { get; set; }
-        public decimal GrandTotal => Lines.Sum(x => x.LineTotal);
     }
 }
-
 
 

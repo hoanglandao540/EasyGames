@@ -2,14 +2,15 @@
 
 namespace EasyGames.Web.Services
 {
-    // Small interface so our controllers or tests can depend on it.
     public interface IInventoryService
     {
+        Task EnsureRowAsync(int shopId, int productId);
         Task<int> GetQtyAsync(int shopId, int productId);
-        Task<bool> EnsureRowAsync(int shopId, int productId);
-        Task<bool> IncreaseAsync(int shopId, int productId, int byQty);
-        Task<bool> DecreaseAsync(int shopId, int productId, int byQty);
-        Task<bool> SetReorderLevelAsync(int shopId, int productId, int newLevel);
+        Task SetReorderLevelAsync(int shopId, int productId, int level);
+
+        Task<bool> IncreaseAsync(int shopId, int productId, int qty);
+        Task<bool> DecreaseAsync(int shopId, int productId, int qty, bool allowOversell = false);
+        Task<bool> TransferAsync(int fromShopId, int toShopId, int productId, int qty);
     }
 }
 

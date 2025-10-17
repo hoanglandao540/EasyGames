@@ -1,96 +1,75 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using EasyGames.Web.Data;
 using EasyGames.Web.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace EasyGames.Web.Services
 {
-    // Inventory logic with simple guard rails:
-    // - never go negative
-    // - auto-create a row if missing (optional)
-    // - async EF calls so UI stays responsive
     public class InventoryService : IInventoryService
     {
         private readonly AppDbContext _db;
+        public InventoryService(AppDbContext db) { _db = db; }
 
-        public InventoryService(AppDbContext db)
+        public async Task EnsureRowAsync(int shopId, int productId)
         {
-            _db = db;
+            var row = await _db.ShopStocks.FirstOrDefaultAsync(s => s.ShopId == shopId && s.ProductId == productId);
+            if (row == null)
+            {
+                _db.ShopStocks.Add(new ShopStock { ShopId = shopId, ProductId = productId, Quantity = 0, ReorderLevel = 0 });
+                await _db.SaveChangesAsync();
+            }
         }
 
         public async Task<int> GetQtyAsync(int shopId, int productId)
         {
-            var row = await _db.ShopStocks
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.ShopId == shopId && x.ProductId == productId);
-
+            var row = await _db.ShopStocks.AsNoTracking().FirstOrDefaultAsync(s => s.ShopId == shopId && s.ProductId == productId);
             return row?.Quantity ?? 0;
         }
 
-        public async Task<bool> EnsureRowAsync(int shopId, int productId)
+        public async Task SetReorderLevelAsync(int shopId, int productId, int level)
         {
-            var exists = await _db.ShopStocks.AnyAsync(x => x.ShopId == shopId && x.ProductId == productId);
-            if (exists) return true;
+            await EnsureRowAsync(shopId, productId);
+            var row = await _db.ShopStocks.FirstAsync(s => s.ShopId == shopId && s.ProductId == productId);
+            row.ReorderLevel = level < 0 ? 0 : level;
+            await _db.SaveChangesAsync();
+        }
 
-            var newRow = new ShopStock
-            {
-                ShopId = shopId,
-                ProductId = productId,
-                Quantity = 0,
-                ReorderLevel = 0
-            };
-
-            _db.ShopStocks.Add(newRow);
+        public async Task<bool> IncreaseAsync(int shopId, int productId, int qty)
+        {
+            if (qty <= 0) return true;
+            await EnsureRowAsync(shopId, productId);
+            var row = await _db.ShopStocks.FirstAsync(s => s.ShopId == shopId && s.ProductId == productId);
+            row.Quantity += qty;
             await _db.SaveChangesAsync();
             return true;
         }
 
-        public async Task<bool> IncreaseAsync(int shopId, int productId, int byQty)
+        public async Task<bool> DecreaseAsync(int shopId, int productId, int qty, bool allowOversell = false)
         {
-            if (byQty <= 0) return false; // human rule: must be positive
+            if (qty <= 0) return true;
+            await EnsureRowAsync(shopId, productId);
+            var row = await _db.ShopStocks.FirstAsync(s => s.ShopId == shopId && s.ProductId == productId);
 
-            var row = await _db.ShopStocks.FirstOrDefaultAsync(x => x.ShopId == shopId && x.ProductId == productId);
-            if (row == null)
-            {
-                // If missing, create it with starting qty.
-                row = new ShopStock { ShopId = shopId, ProductId = productId, Quantity = byQty };
-                _db.ShopStocks.Add(row);
-            }
-            else
-            {
-                checked
-                {
-                    row.Quantity += byQty; // checked to detect overflow (rare, but tidy)
-                }
-            }
-
+            var newQty = row.Quantity - qty;
+            if (!allowOversell && newQty < 0) return false;
+            row.Quantity = newQty;
             await _db.SaveChangesAsync();
             return true;
         }
 
-        public async Task<bool> DecreaseAsync(int shopId, int productId, int byQty)
+        public async Task<bool> TransferAsync(int fromShopId, int toShopId, int productId, int qty)
         {
-            if (byQty <= 0) return false;
+            if (qty <= 0 || fromShopId == toShopId) return false;
 
-            var row = await _db.ShopStocks.FirstOrDefaultAsync(x => x.ShopId == shopId && x.ProductId == productId);
-            if (row == null) return false;
+            await EnsureRowAsync(fromShopId, productId);
+            await EnsureRowAsync(toShopId, productId);
 
-            if (row.Quantity - byQty < 0) return false; // never negative
+            var from = await _db.ShopStocks.FirstAsync(s => s.ShopId == fromShopId && s.ProductId == productId);
+            if (from.Quantity < qty) return false;
 
-            row.Quantity -= byQty;
-            await _db.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<bool> SetReorderLevelAsync(int shopId, int productId, int newLevel)
-        {
-            if (newLevel < 0) return false;
-
-            var row = await _db.ShopStocks.FirstOrDefaultAsync(x => x.ShopId == shopId && x.ProductId == productId);
-            if (row == null) return false;
-
-            row.ReorderLevel = newLevel;
+            var to = await _db.ShopStocks.FirstAsync(s => s.ShopId == toShopId && s.ProductId == productId);
+            from.Quantity -= qty;
+            to.Quantity += qty;
             await _db.SaveChangesAsync();
             return true;
         }

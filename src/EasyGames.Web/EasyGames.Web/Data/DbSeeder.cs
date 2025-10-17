@@ -9,46 +9,40 @@ namespace EasyGames.Web.Data
     {
         public static void Seed(AppDbContext db)
         {
-            // If we already have data, do nothing (safe to call multiple times).
-            if (db.Shops.Any()) return;
-
-            var darwin = new Shop
+            // Ensure warehouse exists
+            if (!db.Shops.Any(s => s.IsWarehouse))
             {
-                Id = 1,      // fixed IDs are okay for seed
-                ShopCode = "DRW-01",
-                ShopName = "EasyGames Darwin",
-                AddressLine1 = "24 Smith St",
-                City = "Darwin",
-                Country = "Australia",
-                Phone = "+61 8 7000 1234",
-                IsActive = true,
-                CreatedAtUtc = DateTime.UtcNow,
-                UpdatedAtUtc = DateTime.UtcNow
-            };
-
-            // Seed users if empty
-            if (!db.Users.Any())
-            {
-                db.Users.AddRange(
-                    new AppUser { FullName = "Fabiha Sultana Anushe", Email = "fabiha.anushe25@gmail.com", Role = "Manager", IsActive = true },
-                    new AppUser { FullName = "Akshata Bhusal", Email = "akshatabhusal80@gmail.com", Role = "Staff", IsActive = true }
-                );
+                db.Shops.Add(new Shop { ShopCode = "WH-OWNER", City = "Darwin", Country = "Australia", Phone = "+61 8 7000 0000", IsWarehouse = true });
                 db.SaveChanges();
             }
+
             if (!db.Products.Any())
             {
                 db.Products.AddRange(
-                    new Product { Id = 1, Sku = "EG-001", Name = "Keyboard", Price = 59.99m, IsActive = true },
-                    new Product { Id = 2, Sku = "EG-002", Name = "Pro Headset", Price = 89.50m, IsActive = true },
-                    new Product { Id = 3, Sku = "EG-003", Name = "Retro Stick", Price = 24.00m, IsActive = true }
+                    new Product { Sku = "EG-001", Name = "Galaxy Quest", ImageUrl = "/img/1001.png", CostPrice = 25m, SellPrice = 49.99m, IsActive = true },
+                    new Product { Sku = "EG-002", Name = "Mystic Adventure", ImageUrl = "/img/1002.png", CostPrice = 20m, SellPrice = 39.00m, IsActive = true },
+                    new Product { Sku = "EG-003", Name = "Neon Racers", ImageUrl = "/img/1003.png", CostPrice = 12m, SellPrice = 29.50m, IsActive = true }
                 );
                 db.SaveChanges();
+            }
 
+            // (optional) seed warehouse stock into ShopStocks for the warehouse shop
+            var wh = db.Shops.First(s => s.IsWarehouse);
+            if (!db.ShopStocks.Any(ss => ss.ShopId == wh.Id))
+            {
+                var p = db.Products.ToList();
+                db.ShopStocks.AddRange(
+                    new ShopStock { ShopId = wh.Id, ProductId = p[0].Id, Quantity = 50, ReorderLevel = 5 },
+                    new ShopStock { ShopId = wh.Id, ProductId = p[1].Id, Quantity = 50, ReorderLevel = 5 },
+                    new ShopStock { ShopId = wh.Id, ProductId = p[2].Id, Quantity = 50, ReorderLevel = 5 }
+                );
+                db.SaveChanges();
             }
 
 
 
 
+<<<<<<< HEAD
 
 
             // We'll reference simple fake product IDs for now (1001..1003).
@@ -65,6 +59,8 @@ namespace EasyGames.Web.Data
 
             // Tiny console message helps during F5 runs
             Console.WriteLine("[Seed] Darwin shop created with 3 stock rows.");
+=======
+>>>>>>> origin/feature/akshata/db-skeleton
         }
     }
 }

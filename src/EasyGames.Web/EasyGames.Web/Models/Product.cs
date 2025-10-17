@@ -16,6 +16,12 @@ namespace EasyGames.Web.Models
         public decimal Price { get; set; }
 
         public bool IsActive { get; set; } = true;
+        public string? ImageUrl { get; set; } 
+        public decimal CostPrice { get; set; }  // owner buy price (for profit)
+        public decimal SellPrice { get; set; }  // storefront price (used in catalog/POS)
+
+
+
     }
 }
 

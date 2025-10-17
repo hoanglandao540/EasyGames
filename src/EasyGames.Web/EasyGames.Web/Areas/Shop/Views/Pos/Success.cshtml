@@ -1,0 +1,21 @@
+﻿@{
+    ViewData["Title"] = "POS Payment Success";
+}
+@section Head {
+    <style>
+        .ok {
+            background: #0b0b12;
+            color: #f5d76e;
+            border-radius: 14px;
+            padding: 18px;
+            margin-top: 20px
+        }
+    </style>
+}
+<div class="ok">
+    <h2>POS payment completed ✅</h2>
+    <p>Order has been saved. Inventory updated.</p>
+    <a class="btn btn-warning" asp-area="Shop" asp-controller="Pos" asp-action="Index" asp-route-shopId="1">Back to POS</a>
+</div>
+
+

@@ -21,99 +21,58 @@ namespace EasyGames.Web.Areas.Storefront.Controllers
             _db = db;
         }
 
-        // GET: /Storefront/Checkout
         public async Task<IActionResult> Index()
         {
-            var vm = await BuildVmFromCartAsync();
-            if (!vm.Lines.Any())
-            {
-                TempData["Msg"] = "Your cart is empty. Please add items first.";
-                return RedirectToAction("Index", "Catalog");
-            }
-            return View(vm);
+            var map = _cart.Get();
+            var ids = map.Keys.ToList();
+            var products = await _db.Products.AsNoTracking().Where(p => ids.Contains(p.Id)).ToDictionaryAsync(p => p.Id);
+            var lines = map.Select(kv => new CartRowVM {
+                ProductId = kv.Key,
+                Name = products.TryGetValue(kv.Key, out var p) ? p.Name : "Unknown",
+                Price = products.TryGetValue(kv.Key, out var p2) ? p2.Price : 0m,
+                Qty = kv.Value
+            }).ToList();
+
+            return View(new CheckoutVM { Lines = lines });
         }
 
-        // POST: /Storefront/Checkout
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(CheckoutVM form)
         {
-            var vm = await BuildVmFromCartAsync();
-            form.Lines = vm.Lines;
-            form.TotalItems = vm.TotalItems;
-            form.GrandTotal = vm.GrandTotal;
-
-            if (!form.Lines.Any())
+            var map = _cart.Get();
+            if (map.Count == 0)
             {
-                TempData["Msg"] = "Your cart is empty. Please add items first.";
+                TempData["Msg"] = "Cart is empty.";
                 return RedirectToAction("Index", "Catalog");
             }
 
-            if (!ModelState.IsValid)
-            {
-                return View(form);
-            }
+            var ids = map.Keys.ToList();
+            var products = await _db.Products.AsNoTracking().Where(p => ids.Contains(p.Id)).ToDictionaryAsync(p => p.Id);
+            var lines = map.Select(kv => new CartRowVM {
+                ProductId = kv.Key,
+                Name = products.TryGetValue(kv.Key, out var p) ? p.Name : "Unknown",
+                Price = products.TryGetValue(kv.Key, out var p2) ? p2.Price : 0m,
+                Qty = kv.Value
+            }).ToList();
 
-            // Create a real Order + Lines (Channel=Online)
             var order = new Order
             {
                 Channel = "Online",
                 CustomerName = form.CustomerName,
                 CustomerEmail = form.Email,
                 Phone = form.Phone,
-                Total = form.GrandTotal,
-                Lines = form.Lines.Select(l => new OrderLine
-                {
-                    ProductId = l.ProductId,
-                    Name = l.Name,
-                    Price = l.Price,
-                    Qty = l.Qty
-                }).ToList()
+                Total = lines.Sum(x => x.LineTotal),
+                Lines = lines.Select(l => new OrderLine { ProductId = l.ProductId, Name = l.Name, Price = l.Price, Qty = l.Qty }).ToList()
             };
 
             _db.Orders.Add(order);
             await _db.SaveChangesAsync();
 
             _cart.Clear();
-            return RedirectToAction(nameof(Success));
+            return RedirectToAction("Success");
         }
 
-        // GET: /Storefront/Checkout/Success
-        public IActionResult Success()
-        {
-            return View();
-        }
-
-        // helper: map cart -> VM using DB products
-        private async Task<CheckoutVM> BuildVmFromCartAsync()
-        {
-            var map = _cart.Get(); // productId -> qty
-            var ids = map.Keys.ToList();
-            var products = await _db.Products.AsNoTracking()
-                .Where(p => ids.Contains(p.Id))
-                .ToDictionaryAsync(p => p.Id);
-
-            var lines = map.Select(kv =>
-            {
-                var id = kv.Key;
-                var qty = kv.Value;
-                products.TryGetValue(id, out var p);
-
-                return new CartRowVM
-                {
-                    ProductId = id,
-                    Name = p?.Name ?? "Unknown",
-                    Price = p?.Price ?? 0m,
-                    Qty = qty
-                };
-            }).ToList();
-
-            return new CheckoutVM
-            {
-                Lines = lines,
-                TotalItems = lines.Sum(x => x.Qty),
-                GrandTotal = lines.Sum(x => x.LineTotal)
-            };
-        }
+        public IActionResult Success() => View();
     }
 }
 

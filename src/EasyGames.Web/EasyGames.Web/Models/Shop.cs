@@ -33,6 +33,7 @@ namespace EasyGames.Web.Models
 
         // Simple flags + audit fields (teachers usually like this)
         public bool IsActive { get; set; } = true;
+        public bool IsWarehouse { get; set; }   // true for the owner’s inventory
 
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow; // set in code too
         public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow; // auto-bumped on save
